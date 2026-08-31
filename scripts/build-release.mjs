@@ -45,7 +45,7 @@ mkdirSync(releaseDirectory, { recursive: true })
 
 const packageName = `mosaic-explore-${manifest.version}.miniapp`
 const packagePath = join(releaseDirectory, packageName)
-execFileSync('git', ['archive', '--format=zip', `--output=${packagePath}`, 'HEAD:app'], {
+execFileSync('python3', ['scripts/create_zip.py', 'app', packagePath], {
   cwd: repositoryRoot,
   stdio: 'inherit'
 })
