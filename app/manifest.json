@@ -1,0 +1,25 @@
+{
+  "description": {
+    "en": "Explore any topic through direct AI answers, interactive paths, surprising facts, and favorites.",
+    "zh": "输入任何主题，通过 AI 直接答案、探索分支、趣味知识和收藏继续发现。"
+  },
+  "entry": "index.html",
+  "icon": {
+    "path": "icon.png",
+    "sha256": "aca209d6be55a5114705517c9e2eef9abeb942670fe0bb187cb50fdcd780c830"
+  },
+  "id": "com.kangfenmao.mosaic-search",
+  "name": {
+    "en": "Mosaic Explore",
+    "zh": "万象探索"
+  },
+  "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
+  "releaseNotes": {
+    "en": "Adds the public update channel and rotates four recommendations whenever you return home.",
+    "zh": "新增公开更新通道，每次返回首页都会轮换四条探索推荐。"
+  },
+  "update": {
+    "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
+  },
+  "version": "1.1.5"
+}

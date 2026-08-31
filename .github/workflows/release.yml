@@ -1,0 +1,79 @@
+name: Release MiniApp
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - app/manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: miniapp-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Build MiniApp release
+        run: node scripts/build-release.mjs
+
+      - name: Read release metadata
+        id: metadata
+        shell: bash
+        run: |
+          version=$(node -p "require('./app/manifest.json').version")
+          package_name="mosaic-explore-${version}.miniapp"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "package_name=${package_name}" >> "$GITHUB_OUTPUT"
+          echo "package_path=dist/site/releases/${version}/${package_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: ${{ steps.metadata.outputs.package_name }}
+          PACKAGE_PATH: ${{ steps.metadata.outputs.package_path }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        shell: bash
+        run: |
+          tag="v${VERSION}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            existing_dir="${RUNNER_TEMP}/existing-release"
+            mkdir -p "$existing_dir"
+            gh release download "$tag" --pattern "$PACKAGE_NAME" --dir "$existing_dir"
+            cmp "$PACKAGE_PATH" "$existing_dir/$PACKAGE_NAME"
+            echo "Release $tag already contains the identical package."
+          else
+            notes=$(node -p "const n=require('./app/manifest.json').releaseNotes; typeof n==='string' ? n : n.en || n.zh")
+            gh release create "$tag" "$PACKAGE_PATH" \
+              --target "$GITHUB_SHA" \
+              --title "Mosaic Explore ${VERSION}" \
+              --notes "$notes"
+          fi
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

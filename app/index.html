@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mosaic Explore</title>
+    <link rel="stylesheet" href="/__cherry/theme.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header id="results-header" class="results-header" hidden>
+        <button id="brand-button" class="compact-brand" type="button" data-i18n-aria="name">
+          <span class="brand-mark brand-mark-small" aria-hidden="true">
+            <svg viewBox="0 0 48 48">
+              <circle cx="21" cy="21" r="11"></circle>
+              <path d="m29 29 9 9"></path>
+              <path class="spark" d="M34 8v8M30 12h8"></path>
+            </svg>
+          </span>
+          <span data-i18n="shortName">万象</span>
+        </button>
+
+        <div class="search-box search-box-compact" role="search">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input id="results-input" type="search" autocomplete="off" maxlength="240" />
+          <button id="results-search" class="search-submit" type="button" data-i18n-aria="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m9 18 6-6-6-6"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section id="home-view" class="home-view">
+          <div class="hero">
+            <div class="brand-lockup">
+              <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <circle cx="21" cy="21" r="11"></circle>
+                  <path d="m29 29 9 9"></path>
+                  <path class="spark" d="M34 8v8M30 12h8"></path>
+                </svg>
+              </span>
+              <div>
+                <h1 data-i18n="name">万象探索</h1>
+                <p data-i18n="tagline">从一个问题出发，发现知识里的意外分支</p>
+              </div>
+            </div>
+
+            <div class="search-box search-box-hero" role="search">
+              <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5"></circle>
+                <path d="m16 16 4 4"></path>
+              </svg>
+              <input id="home-input" type="search" autocomplete="off" maxlength="240" autofocus />
+              <button id="home-search" class="search-submit" type="button" data-i18n-aria="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div id="suggestions" class="suggestions" aria-label="Suggestions"></div>
+            <p class="disclaimer" data-i18n="homeDisclaimer">内容由 AI 基于已有知识生成，不代表实时信息。</p>
+          </div>
+
+          <section id="favorites-section" class="history-section" hidden>
+            <div class="section-heading">
+              <h2 data-i18n="favorites">我的收藏</h2>
+            </div>
+            <div id="favorites-list" class="history-list"></div>
+          </section>
+
+          <section id="history-section" class="history-section" hidden>
+            <div class="section-heading">
+              <h2 data-i18n="recent">最近探索</h2>
+              <button id="clear-history" class="quiet-button" type="button" data-i18n="clear">清除</button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </section>
+
+        <section id="results-view" class="results-view" hidden>
+          <div id="status-line" class="status-line" role="status" aria-live="polite"></div>
+
+          <div id="search-progress" class="search-progress" role="status" aria-live="polite" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="progress-message" data-i18n="thinking">正在生成答案与探索卡片…</span>
+            <button id="cancel-search" class="quiet-button" type="button" data-i18n="cancel">停止</button>
+          </div>
+
+          <section id="loading-view" class="loading-view" hidden>
+            <div class="answer-card loading-card">
+              <span class="skeleton skeleton-label"></span>
+              <span class="skeleton skeleton-line skeleton-wide"></span>
+              <span class="skeleton skeleton-line"></span>
+              <span class="skeleton skeleton-line skeleton-short"></span>
+            </div>
+          </section>
+
+          <section id="error-view" class="error-view" hidden>
+            <div class="answer-card error-card">
+              <h2 data-i18n="searchFailed">没有完成这次搜索</h2>
+              <p id="error-message"></p>
+              <button id="retry-search" class="primary-button" type="button" data-i18n="retry">重试</button>
+            </div>
+          </section>
+
+          <div id="result-content" hidden>
+            <section class="answer-card">
+              <div class="answer-heading">
+                <span class="eyebrow" data-i18n="directAnswer">直接答案</span>
+                <div class="answer-actions">
+                  <span class="ai-badge" data-i18n="aiGenerated">AI 生成</span>
+                  <button id="favorite-toggle" class="favorite-button" type="button"></button>
+                </div>
+              </div>
+              <div id="answer-text" class="answer-text" aria-live="polite"></div>
+              <p class="answer-note" data-i18n="answerDisclaimer">
+                本回答没有实时检索网页。涉及新闻、价格或状态时，请进一步核实。
+              </p>
+            </section>
+
+            <section class="explore-section">
+              <div class="section-heading results-section-heading">
+                <h2 data-i18n="exploreCards">探索卡片</h2>
+                <span id="result-count" class="result-count"></span>
+              </div>
+              <p class="section-description" data-i18n="exploreDescription">
+                选择一个方向继续深入，每次都会生成新的答案和分支。
+              </p>
+              <div id="cards-loading" class="web-loading" hidden>
+                <span class="skeleton skeleton-line skeleton-wide"></span>
+                <span class="skeleton skeleton-line"></span>
+                <span class="skeleton skeleton-line skeleton-short"></span>
+              </div>
+              <div id="explore-cards" class="explore-cards"></div>
+            </section>
+
+            <section id="facts-section" class="facts-section" hidden>
+              <div class="section-heading results-section-heading">
+                <h2 data-i18n="facts">你可能不知道</h2>
+              </div>
+              <p class="section-description" data-i18n="factsDescription">三个容易被忽略、但值得记住的有趣细节。</p>
+              <div id="facts-list" class="facts-list"></div>
+            </section>
+
+            <section id="related-section" class="related-section" hidden>
+              <h2 data-i18n="related">继续探索</h2>
+              <div id="related-queries" class="related-queries"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
