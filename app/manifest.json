@@ -15,11 +15,11 @@
   },
   "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
   "releaseNotes": {
-    "en": "Adds the public update channel and rotates four recommendations whenever you return home.",
-    "zh": "新增公开更新通道，每次返回首页都会轮换四条探索推荐。"
+    "en": "Cancels AI when returning home, preserves answers when exploration content fails, and avoids redundant cache writes.",
+    "zh": "返回首页时取消 AI 请求；探索内容失败时保留答案；减少不必要的缓存写入。"
   },
   "update": {
     "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
   },
-  "version": "1.1.5"
+  "version": "1.1.6"
 }

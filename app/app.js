@@ -18,6 +18,8 @@ const translations = {
     clear: '清除',
     thinking: '正在生成答案与探索卡片…',
     cardsPending: '答案已生成，正在准备探索卡片和趣味知识…',
+    cardsFailed: '探索内容暂时没有生成出来，直接答案仍然可以使用。',
+    retryCards: '重试探索内容',
     cancel: '停止',
     searchFailed: '这次探索没有完成',
     retry: '重试',
@@ -43,6 +45,7 @@ const translations = {
     unavailable: 'AI 暂时不可用，请稍后重试。',
     rateLimited: '请求过于频繁，请稍后再试。',
     genericError: '探索失败，请稍后重试。',
+    saveFailed: '保存失败，本次内容可能不会保留。',
     suggestions: [
       '为什么天空是蓝色的？',
       '穿越到唐朝的一天',
@@ -79,6 +82,8 @@ const translations = {
     clear: 'Clear',
     thinking: 'Creating an answer and exploration cards…',
     cardsPending: 'The answer is ready. Preparing cards and surprising facts…',
+    cardsFailed: 'Exploration content could not be generated. The direct answer is still available.',
+    retryCards: 'Retry exploration content',
     cancel: 'Stop',
     searchFailed: 'This exploration could not be completed',
     retry: 'Retry',
@@ -104,6 +109,7 @@ const translations = {
     unavailable: 'The AI is temporarily unavailable. Try again later.',
     rateLimited: 'Too many requests. Please wait and try again.',
     genericError: 'Exploration failed. Please try again later.',
+    saveFailed: 'Saving failed. This exploration might not be retained.',
     suggestions: [
       'Why is the sky blue?',
       'A day in ancient Rome',
@@ -182,6 +188,8 @@ function cacheElements() {
     'favorite-toggle',
     'result-count',
     'cards-loading',
+    'cards-error',
+    'retry-cards',
     'explore-cards',
     'facts-section',
     'facts-list',
@@ -347,8 +355,12 @@ async function saveHistory(history = state.history) {
   await cherry.file.save(HISTORY_FILE, encodeBase64(JSON.stringify(history)))
 }
 
-async function saveState() {
-  await Promise.allSettled([saveHistory(), cherry.storage.set(FAVORITES_KEY, JSON.stringify(state.favorites))])
+async function saveWithFeedback(operation) {
+  try {
+    await operation()
+  } catch {
+    showToast(t('saveFailed'))
+  }
 }
 
 function showHome(refreshSuggestions = true) {
@@ -397,6 +409,7 @@ function showStreaming() {
   elements['favorite-toggle'].hidden = true
   elements['result-count'].textContent = ''
   elements['cards-loading'].hidden = false
+  elements['cards-error'].hidden = true
   elements['explore-cards'].replaceChildren()
   elements['facts-section'].hidden = true
   elements['related-section'].hidden = true
@@ -505,6 +518,22 @@ function createStructuredPrompt(query) {
   ].join('\n')
 }
 
+async function requestStructuredContent(query, callId) {
+  let response = ''
+  await cherry.ai.chat(
+    {
+      model: 'default',
+      reasoning: 'off',
+      messages: [
+        { role: 'system', content: createStructuredPrompt(query) },
+        { role: 'user', content: query }
+      ]
+    },
+    { callId, onChunk: (chunk) => (response += chunk) }
+  )
+  return parseStructuredResponse(response)
+}
+
 function errorMessage(error) {
   if (error?.message === 'invalid-response') return t('invalidResponse')
   if (error?.name === 'Cancelled') return t('cancelled')
@@ -544,7 +573,6 @@ async function runSearch(rawQuery) {
   state.activeGeneration = generation
   state.activeCallIds = [answerCallId, cardsCallId]
   let answer = ''
-  let rawStructured = ''
   showStreaming()
 
   try {
@@ -571,32 +599,24 @@ async function runSearch(rawQuery) {
         if (state.activeGeneration === generation) elements['progress-message'].textContent = t('cardsPending')
       })
 
-    const cardsRequest = cherry.ai.chat(
-      {
-        model: 'default',
-        reasoning: 'off',
-        messages: [
-          { role: 'system', content: createStructuredPrompt(query) },
-          { role: 'user', content: query }
-        ]
-      },
-      { callId: cardsCallId, onChunk: (chunk) => (rawStructured += chunk) }
-    )
+    const cardsRequest = requestStructuredContent(query, cardsCallId)
 
-    await Promise.all([answerRequest, cardsRequest])
+    const [answerResult, cardsResult] = await Promise.allSettled([answerRequest, cardsRequest])
     if (state.activeGeneration !== generation) return
+    if (answerResult.status === 'rejected') throw answerResult.reason
 
     const normalizedAnswer = normalizeText(answer, 8000)
     if (!normalizedAnswer) throw new Error('invalid-response')
-    const structured = parseStructuredResponse(rawStructured)
+    const structured =
+      cardsResult.status === 'fulfilled' ? cardsResult.value : { cards: [], facts: [], relatedQueries: [] }
     const item = { query, timestamp: Date.now(), data: { answer: normalizedAnswer, ...structured } }
     state.latest = item
     state.history = [item, ...state.history.filter((entry) => entry.query.toLowerCase() !== query.toLowerCase())].slice(
       0,
       MAX_HISTORY
     )
-    await saveState()
     renderResult(item)
+    await saveWithFeedback(() => saveHistory())
   } catch (error) {
     if (state.activeGeneration === generation) showError(errorMessage(error))
   } finally {
@@ -675,6 +695,7 @@ function renderResult(item) {
   elements['error-view'].hidden = true
   elements['result-content'].hidden = false
   elements['cards-loading'].hidden = true
+  elements['cards-error'].hidden = item.data.cards.length > 0
   elements['status-line'].textContent = t(
     'generatedAt',
     new Intl.DateTimeFormat(state.locale, { hour: '2-digit', minute: '2-digit' }).format(item.timestamp)
@@ -689,7 +710,7 @@ function renderResult(item) {
   renderFavoriteButton()
 
   elements['explore-cards'].replaceChildren()
-  elements['result-count'].textContent = t('resultCount', item.data.cards.length)
+  elements['result-count'].textContent = item.data.cards.length ? t('resultCount', item.data.cards.length) : ''
   item.data.cards.forEach((card, index) => elements['explore-cards'].append(createExploreCard(card, index)))
 
   renderFacts(item)
@@ -700,6 +721,43 @@ function renderResult(item) {
     elements['related-queries'].append(createButton('related-query', query, () => runSearch(query)))
   }
   renderSavedLists()
+}
+
+async function retryStructuredContent() {
+  if (!state.latest) return
+  if (state.activeCallIds.length > 0) await cancelActiveSearch()
+
+  const generation = `explore-${Date.now().toString(36)}-cards`
+  const callId = `${generation}-cards`
+  const current = state.latest
+  state.activeGeneration = generation
+  state.activeCallIds = [callId]
+  elements['cards-error'].hidden = true
+  elements['cards-loading'].hidden = false
+
+  try {
+    const structured = await requestStructuredContent(current.query, callId)
+    if (state.activeGeneration !== generation) return
+
+    const item = { ...current, timestamp: Date.now(), data: { answer: current.data.answer, ...structured } }
+    state.latest = item
+    state.history = [
+      item,
+      ...state.history.filter((entry) => entry.query.toLowerCase() !== item.query.toLowerCase())
+    ].slice(0, MAX_HISTORY)
+    renderResult(item)
+    await saveWithFeedback(() => saveHistory())
+  } catch {
+    if (state.activeGeneration === generation) {
+      elements['cards-loading'].hidden = true
+      elements['cards-error'].hidden = false
+    }
+  } finally {
+    if (state.activeGeneration === generation) {
+      state.activeGeneration = null
+      state.activeCallIds = []
+    }
+  }
 }
 
 async function toggleFavorite() {
@@ -713,7 +771,7 @@ async function toggleFavorite() {
     state.favorites = [state.latest, ...state.favorites].slice(0, MAX_FAVORITES)
     showToast(t('addedFavorite'))
   }
-  await saveState()
+  await saveWithFeedback(() => cherry.storage.set(FAVORITES_KEY, JSON.stringify(state.favorites)))
   renderFavoriteButton()
   renderSavedLists()
 }
@@ -747,8 +805,12 @@ function bindEvents() {
       if (event.key === 'Enter') void runSearch(input.value)
     })
   }
-  elements['brand-button'].addEventListener('click', () => showHome())
+  elements['brand-button'].addEventListener('click', () => {
+    void cancelActiveSearch()
+    showHome()
+  })
   elements['favorite-toggle'].addEventListener('click', toggleFavorite)
+  elements['retry-cards'].addEventListener('click', retryStructuredContent)
   elements['cancel-search'].addEventListener('click', async () => {
     await cancelActiveSearch()
     showError(t('cancelled'))
@@ -756,16 +818,13 @@ function bindEvents() {
   elements['retry-search'].addEventListener('click', () => runSearch(state.activeQuery))
   elements['clear-history'].addEventListener('click', async () => {
     state.history = []
-    await saveState()
+    await saveWithFeedback(() => saveHistory())
     renderSavedLists()
   })
 
   cherry.on('app.localeChange', ({ locale }) => {
     state.locale = locale
     applyTranslations()
-  })
-  cherry.on('app.visibilityChange', ({ visible }) => {
-    if (!visible) void saveState()
   })
 }
 
