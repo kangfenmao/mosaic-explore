@@ -14,8 +14,11 @@ Mosaic Explore is a Cherry Studio MiniApp for turning one question into an inter
 
 - Streams a direct AI answer while generating exploration content concurrently.
 - Creates six paths, three surprising facts, and playful next topics.
-- Rotates four recommendations whenever you return home.
-- Stores up to 100 complete explorations and 12 favorites.
+- Rotates category-balanced recommendations and avoids topics already in history when possible.
+- Reopens identical searches from the local cache, with an explicit regenerate option.
+- Stores up to 100 complete explorations and 12 favorites, with item-level favorite and delete actions.
+- Supports contextual follow-up questions from the current answer.
+- Exports an exploration as a shareable text file when the optional permission is enabled.
 - Uses existing model knowledge and clearly identifies non-real-time content.
 
 ## Permissions
@@ -25,6 +28,7 @@ Mosaic Explore is a Cherry Studio MiniApp for turning one question into an inter
 | `ai.chat` | Generate the answer, exploration cards, facts, and related topics. |
 | `file.load` | Load the local exploration history cache. |
 | `file.save` | Save up to 100 complete exploration results locally. |
+| `file.export` (optional) | Export the current exploration as a text file chosen by the user. |
 | `storage.get` | Load favorites and migrate older history data. |
 | `storage.set` | Save favorites. |
 

@@ -65,7 +65,7 @@
               </button>
             </div>
 
-            <div id="suggestions" class="suggestions" aria-label="Suggestions"></div>
+            <div id="suggestions" class="suggestions"></div>
             <p class="disclaimer" data-i18n="homeDisclaimer">内容由 AI 基于已有知识生成，不代表实时信息。</p>
           </div>
 
@@ -87,6 +87,14 @@
 
         <section id="results-view" class="results-view" hidden>
           <div id="status-line" class="status-line" role="status" aria-live="polite"></div>
+
+          <div id="cache-notice" class="cache-notice" role="status" hidden>
+            <span data-i18n="cacheFound">已显示上次保存的结果，不会消耗 AI。</span>
+            <div class="cache-actions">
+              <button id="keep-cached" class="quiet-button" type="button" data-i18n="keepCached">继续查看</button>
+              <button id="regenerate" class="quiet-button" type="button" data-i18n="regenerate">重新生成</button>
+            </div>
+          </div>
 
           <div id="search-progress" class="search-progress" role="status" aria-live="polite" hidden>
             <span class="spinner" aria-hidden="true"></span>
@@ -117,6 +125,9 @@
                 <span class="eyebrow" data-i18n="directAnswer">直接答案</span>
                 <div class="answer-actions">
                   <span class="ai-badge" data-i18n="aiGenerated">AI 生成</span>
+                  <button id="export-result" class="favorite-button" type="button" data-i18n="exportResult">
+                    导出分享
+                  </button>
                   <button id="favorite-toggle" class="favorite-button" type="button"></button>
                 </div>
               </div>
@@ -160,11 +171,25 @@
               <h2 data-i18n="related">继续探索</h2>
               <div id="related-queries" class="related-queries"></div>
             </section>
+
+            <section id="follow-up-section" class="follow-up-section" hidden>
+              <h2 data-i18n="followUp">继续追问</h2>
+              <p class="section-description" data-i18n="followUpDescription">
+                AI 会结合当前答案理解你的下一步问题。
+              </p>
+              <form id="follow-up-form" class="follow-up-form">
+                <input id="follow-up-input" type="text" maxlength="160" />
+                <button class="primary-button" type="submit" data-i18n="sendFollowUp">追问</button>
+              </form>
+            </section>
           </div>
         </section>
       </main>
 
-      <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+      <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+        <span id="toast-message"></span>
+        <button id="toast-action" class="toast-action" type="button" hidden></button>
+      </div>
     </div>
     <script src="./app.js" defer></script>
   </body>

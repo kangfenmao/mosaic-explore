@@ -14,12 +14,13 @@
     "zh": "万象探索"
   },
   "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
+  "optionalPermissions": ["file.export"],
   "releaseNotes": {
-    "en": "Cancels AI when returning home, preserves answers when exploration content fails, and avoids redundant cache writes.",
-    "zh": "返回首页时取消 AI 请求；探索内容失败时保留答案；减少不必要的缓存写入。"
+    "en": "Adds history-aware recommendations, cached-result choices, item-level history actions, contextual follow-ups, and optional text export.",
+    "zh": "新增历史避重推荐、缓存结果选择、单条历史管理、上下文追问和可选的文本导出。"
   },
   "update": {
     "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
   },
-  "version": "1.1.6"
+  "version": "1.2.0"
 }
