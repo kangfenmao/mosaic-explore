@@ -6,7 +6,7 @@
   "entry": "index.html",
   "icon": {
     "path": "icon.png",
-    "sha256": "83531ac0307cb4874ec23f3227428bc441680f5b4b2e1673a5dc0d77ef77ddcf"
+    "sha256": "487c1abe10afb3df1b9b7d38855cdd3014f538cf1e9322db6310b9ee8baf7264"
   },
   "id": "com.kangfenmao.mosaic-search",
   "name": {
@@ -16,11 +16,11 @@
   "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
   "optionalPermissions": ["file.export"],
   "releaseNotes": {
-    "en": "Introduces a unified green theme, a bolder brand icon, and consistent interface action icons.",
-    "zh": "启用统一的绿色主题、加粗品牌图标，并统一界面操作图标的图形规范。"
+    "en": "Uses a full-bleed opaque package icon while preserving the rounded in-app brand icon.",
+    "zh": "安装图标改为无圆角、无透明底的满幅图像，同时保留应用内部的圆角品牌图标。"
   },
   "update": {
     "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
   },
-  "version": "1.2.1"
+  "version": "1.2.2"
 }
