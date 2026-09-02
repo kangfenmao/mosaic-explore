@@ -32,6 +32,17 @@
         </div>
       </header>
 
+      <header id="discovery-header" class="discovery-header" hidden>
+        <button id="discovery-brand-button" class="compact-brand" type="button" data-i18n-aria="backHome">
+          <span class="brand-mark brand-mark-small" aria-hidden="true">
+            <img src="./brand-icon.svg" alt="" />
+          </span>
+          <span data-i18n="shortName">万象</span>
+        </button>
+        <strong data-i18n="discovery">探索</strong>
+        <span class="discovery-frequency" data-i18n="discoveryFrequency">每小时更新</span>
+      </header>
+
       <main>
         <section id="home-view" class="home-view">
           <div class="hero">
@@ -39,7 +50,7 @@
               <span class="brand-mark" aria-hidden="true">
                 <img src="./brand-icon.svg" alt="" />
               </span>
-              <div>
+              <div class="brand-copy">
                 <h1 data-i18n="name">万象探索</h1>
                 <p data-i18n="tagline">从一个问题出发，发现知识里的意外分支</p>
               </div>
@@ -76,6 +87,51 @@
             </div>
             <div id="history-list" class="history-list"></div>
           </section>
+        </section>
+
+        <section id="discovery-view" class="discovery-view" hidden>
+          <div class="discovery-intro">
+            <h1 data-i18n="discoveryTitle">今天想探索什么？</h1>
+            <p data-i18n="discoveryDescription">从熟悉的世界拐个弯，看看知识还能通向哪里。</p>
+          </div>
+
+          <section class="discovery-section">
+            <div class="discovery-section-heading">
+              <span class="discovery-section-icon" data-discovery-icon="spark" aria-hidden="true"></span>
+              <h2 data-i18n="discoveryFeatured">本期焦点</h2>
+            </div>
+            <div id="discovery-featured" class="discovery-grid discovery-grid-featured"></div>
+          </section>
+
+          <section class="discovery-section">
+            <div class="discovery-section-heading">
+              <span class="discovery-section-icon" data-discovery-icon="compass" aria-hidden="true"></span>
+              <h2 data-i18n="discoveryFresh">新鲜发现</h2>
+            </div>
+            <div id="discovery-fresh" class="discovery-grid discovery-grid-standard"></div>
+          </section>
+
+          <div class="discovery-columns">
+            <section class="discovery-section">
+              <div class="discovery-section-heading">
+                <span class="discovery-section-icon" data-discovery-icon="orbit" aria-hidden="true"></span>
+                <h2 data-i18n="discoveryWhatIf">脑洞实验室</h2>
+              </div>
+              <div id="discovery-what-if" class="discovery-grid discovery-grid-compact"></div>
+            </section>
+
+            <section class="discovery-section">
+              <div class="discovery-section-heading">
+                <span class="discovery-section-icon" data-discovery-icon="link" aria-hidden="true"></span>
+                <h2 data-i18n="discoveryConnections">意外连接</h2>
+              </div>
+              <div id="discovery-connections" class="discovery-grid discovery-grid-compact"></div>
+            </section>
+          </div>
+
+          <p class="discovery-disclaimer" data-i18n="discoveryDisclaimer">
+            内容由 AI 基于已有知识生成，不代表实时信息。
+          </p>
         </section>
 
         <section id="results-view" class="results-view" hidden>

@@ -1,10 +1,15 @@
 const HISTORY_KEY = 'explore-history-v1'
 const HISTORY_FILE = 'explore-history.json'
 const FAVORITES_KEY = 'explore-favorites-v1'
+const DISCOVERY_KEY = 'explore-discovery-v1'
 const EXPORT_FILE = 'mosaic-explore-share.txt'
 const MAX_HISTORY = 100
 const MAX_FAVORITES = 12
 const MAX_CARDS = 6
+const MAX_DISCOVERY_BATCHES = 3
+const MAX_SEEN_DISCOVERY_TOPICS = 120
+const DISCOVERY_REFRESH_INTERVAL = 60 * 60 * 1000
+const DISCOVERY_COUNTS = { featured: 4, fresh: 6, whatIf: 5, connections: 5 }
 
 const translations = {
   zh: {
@@ -18,6 +23,18 @@ const translations = {
     recent: '最近探索',
     clear: '清除',
     suggestionsAria: '推荐探索主题',
+    backHome: '返回首页',
+    discovery: '探索',
+    discoveryMore: '探索更多',
+    discoveryTitle: '今天想探索什么？',
+    discoveryDescription: '从熟悉的世界拐个弯，看看知识还能通向哪里。',
+    discoveryFrequency: '每小时更新',
+    discoveryFeatured: '本期焦点',
+    discoveryFresh: '新鲜发现',
+    discoveryWhatIf: '脑洞实验室',
+    discoveryConnections: '意外连接',
+    discoveryDisclaimer: '内容由 AI 基于已有知识生成，不代表实时信息。',
+    discoveryTopicAction: (title) => `探索：${title}`,
     cacheFound: '已显示上次保存的结果，不会消耗 AI。',
     keepCached: '继续查看',
     regenerate: '重新生成',
@@ -71,6 +88,22 @@ const translations = {
     rateLimited: '请求过于频繁，请稍后再试。',
     genericError: '探索失败，请稍后重试。',
     saveFailed: '保存失败，本次内容可能不会保留。',
+    categoryLabels: {
+      science: '科学',
+      history: '历史',
+      culture: '文化',
+      cosmos: '宇宙',
+      'what-if': '脑洞',
+      mind: '心理'
+    },
+    fallbackSummaries: {
+      science: '从常见现象背后，找到一条通往科学原理的入口。',
+      history: '回到具体的时代现场，看看历史如何影响今天。',
+      culture: '拆开熟悉的文化体验，发现它为什么让人着迷。',
+      cosmos: '把视线移向宇宙，用极端尺度重新理解日常世界。',
+      'what-if': '改变一个关键条件，推演世界可能发生的连锁反应。',
+      mind: '观察大脑如何塑造感觉、记忆和我们做出的判断。'
+    },
     suggestions: [
       { category: 'science', query: '为什么天空是蓝色的？' },
       { category: 'history', query: '穿越到唐朝的一天' },
@@ -106,6 +139,18 @@ const translations = {
     recent: 'Recent explorations',
     clear: 'Clear',
     suggestionsAria: 'Suggested topics to explore',
+    backHome: 'Back to home',
+    discovery: 'Discover',
+    discoveryMore: 'Discover more',
+    discoveryTitle: 'What will you discover today?',
+    discoveryDescription: 'Take a turn away from the familiar and see where knowledge leads.',
+    discoveryFrequency: 'Updated hourly',
+    discoveryFeatured: 'In focus',
+    discoveryFresh: 'Fresh discoveries',
+    discoveryWhatIf: 'What-if lab',
+    discoveryConnections: 'Unexpected connections',
+    discoveryDisclaimer: 'Content comes from existing AI knowledge and is not real-time.',
+    discoveryTopicAction: (title) => `Explore: ${title}`,
     cacheFound: 'Showing the saved result without using AI.',
     keepCached: 'Keep viewing',
     regenerate: 'Regenerate',
@@ -159,6 +204,22 @@ const translations = {
     rateLimited: 'Too many requests. Please wait and try again.',
     genericError: 'Exploration failed. Please try again later.',
     saveFailed: 'Saving failed. This exploration might not be retained.',
+    categoryLabels: {
+      science: 'Science',
+      history: 'History',
+      culture: 'Culture',
+      cosmos: 'Cosmos',
+      'what-if': 'What if',
+      mind: 'Mind'
+    },
+    fallbackSummaries: {
+      science: 'Start with a familiar phenomenon and uncover the science behind it.',
+      history: 'Step into a particular era and see how it still shapes life today.',
+      culture: 'Open up a familiar cultural experience and discover why it fascinates us.',
+      cosmos: 'Look outward and use cosmic scales to rethink the everyday world.',
+      'what-if': 'Change one condition and follow the chain reaction through an imagined world.',
+      mind: 'See how the brain shapes perception, memory, and the choices we make.'
+    },
     suggestions: [
       { category: 'science', query: 'Why is the sky blue?' },
       { category: 'history', query: 'A day in ancient Rome' },
@@ -189,6 +250,13 @@ const state = {
   locale: 'zh-CN',
   history: [],
   favorites: [],
+  discoveryBatches: [],
+  seenDiscoveryTopics: [],
+  discoveryLastAttempt: 0,
+  discoveryBatch: null,
+  discoveryScrollY: 0,
+  currentView: 'home',
+  resultReturnView: 'home',
   activeQuery: '',
   activeGeneration: null,
   activeCallIds: [],
@@ -200,9 +268,14 @@ const state = {
 
 const elements = {}
 const iconMarkup = {
+  arrowRight: '<path d="M5 12h14m-5-5 5 5-5 5"/>',
   arrowUpRight: '<path d="M8 16 16 8M9 8h7v7"/>',
   clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5v4.8l3.2 1.8"/>',
+  compass: '<circle cx="12" cy="12" r="8"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z"/>',
   export: '<path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
+  link: '<path d="m9.5 14.5 5-5M7.8 16.2l-1 1a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M16.2 7.8l1-1a3 3 0 0 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0"/>',
+  orbit: '<circle cx="12" cy="12" r="2.2"/><path d="M4.4 9.2c1.4-3.9 4.4-6.2 6.8-5.3s3.2 4.7 1.8 8.6-4.4 6.2-6.8 5.3-3.2-4.7-1.8-8.6Z"/><path d="M9.2 19.6c-3.9-1.4-6.2-4.4-5.3-6.8s4.7-3.2 8.6-1.8 6.2 4.4 5.3 6.8-4.7 3.2-8.6 1.8Z"/>',
+  spark: '<path d="m12 3 1.2 4.2L17 9l-3.8 1.8L12 15l-1.2-4.2L7 9l3.8-1.8L12 3ZM18.5 14.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3Z"/>',
   star: '<path d="m12 3.75 2.55 5.15 5.7.83-4.12 4.02.97 5.68L12 16.75 6.9 19.43l.97-5.68-4.12-4.02 5.7-.83L12 3.75Z"/>',
   x: '<path d="m8 8 8 8M16 8l-8 8"/>'
 }
@@ -220,6 +293,13 @@ function cacheElements() {
   for (const id of [
     'results-header',
     'brand-button',
+    'discovery-header',
+    'discovery-brand-button',
+    'discovery-view',
+    'discovery-featured',
+    'discovery-fresh',
+    'discovery-what-if',
+    'discovery-connections',
     'home-view',
     'results-view',
     'home-input',
@@ -281,10 +361,12 @@ function applyTranslations() {
   elements['results-input'].placeholder = t('placeholder')
   elements.suggestions.setAttribute('aria-label', t('suggestionsAria'))
   elements['follow-up-input'].placeholder = t('followUpPlaceholder')
+  renderDiscoverySectionIcons()
   renderExportButton()
   renderSuggestions()
   renderSavedLists()
-  if (state.latest) renderResult(state.latest)
+  if (state.currentView === 'results' && state.latest) renderResult(state.latest)
+  if (state.currentView === 'discovery' && state.discoveryBatch) renderDiscovery(state.discoveryBatch)
 }
 
 function createButton(className, text, onClick) {
@@ -316,6 +398,12 @@ function renderExportButton() {
   renderLabeledIconButton(elements['export-result'], 'export', t(state.exporting ? 'exporting' : 'exportResult'))
 }
 
+function renderDiscoverySectionIcons() {
+  document.querySelectorAll('[data-discovery-icon]').forEach((node) => {
+    node.replaceChildren(createIcon(node.dataset.discoveryIcon))
+  })
+}
+
 function queryKey(query) {
   return String(query).trim().toLowerCase()
 }
@@ -323,17 +411,17 @@ function queryKey(query) {
 function selectSuggestions(suggestions) {
   const explored = new Set(state.history.map((item) => queryKey(item.query)))
   const unseen = suggestions.filter((item) => !explored.has(queryKey(item.query)))
-  const pool = unseen.length >= 4 ? unseen : suggestions
+  const pool = unseen.length >= 5 ? unseen : suggestions
   const categories = [...new Set(pool.map((item) => item.category))]
   const selected = []
 
-  for (let index = 0; index < categories.length && selected.length < 4; index += 1) {
+  for (let index = 0; index < categories.length && selected.length < 5; index += 1) {
     const category = categories[(state.suggestionOffset + index) % categories.length]
     const categoryItems = pool.filter((item) => item.category === category)
     selected.push(categoryItems[(state.suggestionOffset + index) % categoryItems.length])
   }
 
-  for (let index = 0; selected.length < 4 && index < pool.length; index += 1) {
+  for (let index = 0; selected.length < 5 && index < pool.length; index += 1) {
     const candidate = pool[(state.suggestionOffset + index) % pool.length]
     if (!selected.includes(candidate)) selected.push(candidate)
   }
@@ -349,6 +437,10 @@ function renderSuggestions(refresh = false) {
   for (const suggestion of selectSuggestions(suggestions)) {
     elements.suggestions.append(createButton('suggestion-chip', suggestion.query, () => runSearch(suggestion.query)))
   }
+  const discoveryEntry = createButton('suggestion-chip discovery-entry', '', () => showDiscovery())
+  discoveryEntry.setAttribute('aria-label', t('discoveryMore'))
+  discoveryEntry.append(createIcon('compass'), document.createTextNode(t('discoveryMore')), createIcon('arrowRight'))
+  elements.suggestions.append(discoveryEntry)
 }
 
 function formatHistoryTime(timestamp) {
@@ -426,6 +518,95 @@ function renderSavedLists() {
   state.history.forEach((item, index) => elements['history-list'].append(renderSavedItem(item, false, index)))
 }
 
+function isDiscoveryTopic(value) {
+  return (
+    value &&
+    typeof value.category === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.summary === 'string' &&
+    typeof value.prompt === 'string'
+  )
+}
+
+function isDiscoveryBatch(value) {
+  return (
+    value &&
+    typeof value.timestamp === 'number' &&
+    (value.locale === 'zh' || value.locale === 'en') &&
+    value.sections &&
+    Object.keys(DISCOVERY_COUNTS).every(
+      (section) => Array.isArray(value.sections[section]) && value.sections[section].every(isDiscoveryTopic)
+    )
+  )
+}
+
+function parseDiscoveryState(value) {
+  try {
+    const parsed = value ? JSON.parse(value) : {}
+    return {
+      batches: Array.isArray(parsed.batches)
+        ? parsed.batches.filter(isDiscoveryBatch).slice(0, MAX_DISCOVERY_BATCHES)
+        : [],
+      seenTopics: Array.isArray(parsed.seenTopics)
+        ? parsed.seenTopics.filter((title) => typeof title === 'string').slice(0, MAX_SEEN_DISCOVERY_TOPICS)
+        : [],
+      lastAttempt: typeof parsed.lastAttempt === 'number' ? parsed.lastAttempt : 0
+    }
+  } catch {
+    return { batches: [], seenTopics: [], lastAttempt: 0 }
+  }
+}
+
+async function loadDiscoveryState() {
+  try {
+    const { value } = await cherry.storage.get(DISCOVERY_KEY)
+    return parseDiscoveryState(value)
+  } catch {
+    return { batches: [], seenTopics: [], lastAttempt: 0 }
+  }
+}
+
+function saveDiscoveryState() {
+  return cherry.storage.set(
+    DISCOVERY_KEY,
+    JSON.stringify({
+      batches: state.discoveryBatches,
+      seenTopics: state.seenDiscoveryTopics,
+      lastAttempt: state.discoveryLastAttempt
+    })
+  )
+}
+
+function latestDiscoveryBatch() {
+  return state.discoveryBatches.find((batch) => batch.locale === languageKey())
+}
+
+function createFallbackDiscoveryBatch() {
+  const suggestions = t('suggestions')
+  const labels = t('categoryLabels')
+  const summaries = t('fallbackSummaries')
+  const topic = (index) => {
+    const suggestion = suggestions[index]
+    return {
+      category: labels[suggestion.category] || suggestion.category,
+      title: suggestion.query,
+      summary: summaries[suggestion.category] || summaries.culture,
+      prompt: suggestion.query
+    }
+  }
+  const indexes = {
+    featured: [3, 5, 8, 15],
+    fresh: [0, 1, 6, 12, 14, 16],
+    whatIf: [4, 11, 18, 19, 9],
+    connections: [2, 7, 10, 13, 17]
+  }
+  return {
+    timestamp: 0,
+    locale: languageKey(),
+    sections: Object.fromEntries(Object.entries(indexes).map(([section, values]) => [section, values.map(topic)]))
+  }
+}
+
 function isStoredExploration(value) {
   return (
     value &&
@@ -492,9 +673,17 @@ async function loadHistory() {
 }
 
 async function loadState() {
-  const [history, favorites] = await Promise.all([loadHistory(), loadStorageCollection(FAVORITES_KEY, MAX_FAVORITES)])
+  const [history, favorites, discovery] = await Promise.all([
+    loadHistory(),
+    loadStorageCollection(FAVORITES_KEY, MAX_FAVORITES),
+    loadDiscoveryState()
+  ])
   state.history = history
   state.favorites = favorites
+  state.discoveryBatches = discovery.batches
+  state.seenDiscoveryTopics = discovery.seenTopics
+  state.discoveryLastAttempt = discovery.lastAttempt
+  state.discoveryBatch = latestDiscoveryBatch() || createFallbackDiscoveryBatch()
 }
 
 async function saveHistory(history = state.history) {
@@ -511,20 +700,42 @@ async function saveWithFeedback(operation) {
 
 function showHome(refreshSuggestions = true) {
   elements['results-header'].hidden = true
+  elements['discovery-header'].hidden = true
   elements['results-view'].hidden = true
+  elements['discovery-view'].hidden = true
   elements['home-view'].hidden = false
   elements['cache-notice'].hidden = true
   elements['home-input'].value = ''
   elements['results-input'].value = ''
+  state.currentView = 'home'
+  state.resultReturnView = 'home'
   if (refreshSuggestions) renderSuggestions(true)
   renderSavedLists()
   requestAnimationFrame(() => elements['home-input'].focus())
 }
 
+function showDiscovery(options = {}) {
+  const restoreScroll = options.restoreScroll === true
+  elements['results-header'].hidden = true
+  elements['home-view'].hidden = true
+  elements['results-view'].hidden = true
+  elements['discovery-header'].hidden = false
+  elements['discovery-view'].hidden = false
+  state.currentView = 'discovery'
+  state.discoveryBatch = latestDiscoveryBatch() || createFallbackDiscoveryBatch()
+  renderDiscovery(state.discoveryBatch)
+  window.scrollTo({ top: restoreScroll ? state.discoveryScrollY : 0, behavior: 'instant' })
+
+  if (options.allowRefresh !== false) void refreshDiscoveryIfNeeded()
+}
+
 function showResultsShell(query) {
   elements['home-view'].hidden = true
+  elements['discovery-header'].hidden = true
+  elements['discovery-view'].hidden = true
   elements['results-header'].hidden = false
   elements['results-view'].hidden = false
+  state.currentView = 'results'
   elements['home-input'].value = query
   elements['results-input'].value = query
   window.scrollTo({ top: 0, behavior: 'instant' })
@@ -585,6 +796,183 @@ function normalizeText(value, maxLength) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
 }
 
+function parseJsonObject(raw) {
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    const start = cleaned.indexOf('{')
+    const end = cleaned.lastIndexOf('}')
+    if (start < 0 || end <= start) throw new Error('invalid-response')
+    try {
+      return JSON.parse(cleaned.slice(start, end + 1))
+    } catch {
+      throw new Error('invalid-response')
+    }
+  }
+}
+
+function normalizeDiscoveryTopic(candidate) {
+  const category = normalizeText(candidate?.category, 24)
+  const title = normalizeText(candidate?.title, 100)
+  const summary = normalizeText(candidate?.summary, 260)
+  const prompt = normalizeText(candidate?.prompt, 220)
+  return category && title && summary && prompt ? { category, title, summary, prompt } : null
+}
+
+function normalizeDiscoveryResponse(raw, sectionCounts) {
+  const parsed = parseJsonObject(raw)
+  const sections = {}
+  let topicCount = 0
+  for (const [section, count] of Object.entries(sectionCounts)) {
+    sections[section] = (Array.isArray(parsed[section]) ? parsed[section] : [])
+      .map(normalizeDiscoveryTopic)
+      .filter(Boolean)
+      .slice(0, count)
+    topicCount += sections[section].length
+  }
+  if (topicCount < 4) throw new Error('invalid-response')
+  return sections
+}
+
+function mergeDiscoverySections(baseSections, generatedSections) {
+  const fallbackSections = createFallbackDiscoveryBatch().sections
+  const merged = {}
+  const usedTitles = new Set()
+  for (const [section, count] of Object.entries(DISCOVERY_COUNTS)) {
+    const candidates = [
+      ...(generatedSections[section] || []),
+      ...(baseSections[section] || []),
+      ...(fallbackSections[section] || [])
+    ]
+    merged[section] = []
+    for (const topic of candidates) {
+      const key = queryKey(topic.title)
+      if (!key || usedTitles.has(key)) continue
+      usedTitles.add(key)
+      merged[section].push(topic)
+      if (merged[section].length >= count) break
+    }
+  }
+  return merged
+}
+
+function createDiscoveryPrompt(sectionCounts) {
+  const shapes = Object.entries(sectionCounts)
+    .map(([section]) => `"${section}":[{"category":"string","title":"string","summary":"string","prompt":"string"}]`)
+    .join(',')
+  const requirements = Object.entries(sectionCounts)
+    .map(([section, count]) => `- ${section}: exactly ${count} topics.`)
+    .join('\n')
+  const visibleTopics = state.discoveryBatch
+    ? Object.values(state.discoveryBatch.sections)
+        .flat()
+        .map((topic) => topic.title)
+    : []
+  const avoidedTopics = [
+    ...visibleTopics,
+    ...state.seenDiscoveryTopics.slice(0, 40),
+    ...state.history.slice(0, 12).map((item) => item.query)
+  ]
+    .map((title) => normalizeText(title, 100))
+    .filter(Boolean)
+    .join(' | ')
+  return [
+    'You curate an entertaining discovery page for Mosaic Explore.',
+    'Use stable knowledge only. Do not include news, current rankings, prices, or time-sensitive claims.',
+    `Write all user-facing text in ${t('systemLanguage')}.`,
+    'Return exactly one valid JSON object with no markdown or surrounding text.',
+    `Use this exact shape: {${shapes}}`,
+    requirements,
+    'featured should feel important and memorable. fresh should span science, history, culture, nature, technology, and everyday life.',
+    'whatIf should explore imaginative counterfactuals. connections should reveal a surprising relationship between different fields.',
+    'Every title must create curiosity without clickbait. summary must be one concise, useful sentence.',
+    'Every prompt must be a self-contained question suitable for a detailed AI answer.',
+    'Do not repeat or lightly rephrase topics within the response.',
+    avoidedTopics ? `Avoid these recently shown or explored topics and close variations: ${avoidedTopics}` : ''
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+async function requestDiscoverySections(sectionCounts, callId) {
+  let response = ''
+  await cherry.ai.chat(
+    {
+      model: 'default',
+      reasoning: 'off',
+      messages: [
+        { role: 'system', content: createDiscoveryPrompt(sectionCounts) },
+        { role: 'user', content: 'Generate a fresh collection now.' }
+      ]
+    },
+    { callId, onChunk: (chunk) => (response += chunk) }
+  )
+  return normalizeDiscoveryResponse(response, sectionCounts)
+}
+
+async function refreshDiscoveryIfNeeded() {
+  const latest = latestDiscoveryBatch()
+  const lastRefresh = Math.max(latest?.timestamp || 0, state.discoveryLastAttempt)
+  if (state.activeGeneration || Date.now() - lastRefresh < DISCOVERY_REFRESH_INTERVAL) return
+
+  const generation = `discovery-${Date.now().toString(36)}`
+  state.activeGeneration = generation
+  state.discoveryLastAttempt = Date.now()
+
+  try {
+    await saveWithFeedback(saveDiscoveryState)
+    const capabilities = await cherry.ai.getCapabilities({ model: 'default' })
+    if (state.activeGeneration !== generation) return
+    if (!capabilities.available) return
+
+    const primaryCallId = `${generation}-primary`
+    const playfulCallId = `${generation}-playful`
+    state.activeCallIds = [primaryCallId, playfulCallId]
+    const primaryRequest = requestDiscoverySections({ featured: 4, fresh: 6 }, primaryCallId)
+    const playfulRequest = requestDiscoverySections({ whatIf: 5, connections: 5 }, playfulCallId)
+    const results = await Promise.allSettled([primaryRequest, playfulRequest])
+    if (state.activeGeneration !== generation) return
+
+    const generatedSections = {}
+    for (const result of results) {
+      if (result.status === 'fulfilled') Object.assign(generatedSections, result.value)
+    }
+    if (Object.keys(generatedSections).length === 0) return
+
+    const base = latest || state.discoveryBatch || createFallbackDiscoveryBatch()
+    const batch = {
+      timestamp: Date.now(),
+      locale: languageKey(),
+      sections: mergeDiscoverySections(base.sections, generatedSections)
+    }
+    const freshTitles = Object.values(batch.sections)
+      .flat()
+      .map((topic) => topic.title)
+    state.discoveryBatches = [
+      batch,
+      ...state.discoveryBatches.filter(
+        (candidate) => candidate.locale !== batch.locale || candidate.timestamp !== batch.timestamp
+      )
+    ].slice(0, MAX_DISCOVERY_BATCHES)
+    state.seenDiscoveryTopics = [
+      ...freshTitles,
+      ...state.seenDiscoveryTopics.filter((title) => !freshTitles.some((freshTitle) => queryKey(freshTitle) === queryKey(title)))
+    ].slice(0, MAX_SEEN_DISCOVERY_TOPICS)
+    await saveWithFeedback(saveDiscoveryState)
+  } catch {
+    // Keep the existing discovery collection when a silent refresh fails.
+  } finally {
+    if (state.activeGeneration === generation) {
+      state.activeGeneration = null
+      state.activeCallIds = []
+    }
+  }
+}
+
 function normalizeStructured(value) {
   const cards = []
   for (const candidate of Array.isArray(value.cards) ? value.cards : []) {
@@ -616,22 +1004,11 @@ function normalizeStructured(value) {
 }
 
 function parseStructuredResponse(raw) {
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/, '')
   try {
-    return normalizeStructured(JSON.parse(cleaned))
+    return normalizeStructured(parseJsonObject(raw))
   } catch (error) {
     if (error?.message === 'invalid-response') throw error
-    const start = cleaned.indexOf('{')
-    const end = cleaned.lastIndexOf('}')
-    if (start < 0 || end <= start) throw new Error('invalid-response')
-    try {
-      return normalizeStructured(JSON.parse(cleaned.slice(start, end + 1)))
-    } catch {
-      throw new Error('invalid-response')
-    }
+    throw new Error('invalid-response')
   }
 }
 
@@ -716,7 +1093,8 @@ async function runSearch(rawQuery, options = {}) {
     .trim()
     .slice(0, 240)
 
-  if (state.activeCallIds.length > 0) await cancelActiveSearch()
+  if (state.currentView !== 'results') state.resultReturnView = state.currentView
+  if (state.activeGeneration) await cancelActiveSearch()
   if (!options.force) {
     const cached = findCachedResult(query)
     if (cached) {
@@ -835,6 +1213,52 @@ function createExploreCard(card) {
   return button
 }
 
+function openDiscoveryTopic(topic) {
+  state.discoveryScrollY = window.scrollY
+  state.resultReturnView = 'discovery'
+  void runSearch(topic.prompt, { displayQuery: topic.title })
+}
+
+function createDiscoveryCard(topic, section, index) {
+  const isLead = section === 'featured' && index === 0
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = `discovery-card discovery-card-${section === 'whatIf' ? 'what-if' : section}`
+  if (isLead) button.classList.add('discovery-card-lead')
+  button.setAttribute('aria-label', t('discoveryTopicAction', topic.title))
+
+  const title = document.createElement('strong')
+  title.className = 'discovery-card-title'
+  title.textContent = topic.title
+  const summary = document.createElement('span')
+  summary.className = 'discovery-card-summary'
+  summary.textContent = topic.summary
+  button.append(title, summary)
+
+  if (isLead) {
+    const action = document.createElement('span')
+    action.className = 'discovery-card-action'
+    action.setAttribute('aria-hidden', 'true')
+    action.append(document.createTextNode(t('discovery')), createIcon('arrowUpRight'))
+    button.append(action)
+  }
+  button.addEventListener('click', () => openDiscoveryTopic(topic))
+  return button
+}
+
+function renderDiscovery(batch) {
+  const containers = {
+    featured: elements['discovery-featured'],
+    fresh: elements['discovery-fresh'],
+    whatIf: elements['discovery-what-if'],
+    connections: elements['discovery-connections']
+  }
+  for (const [section, container] of Object.entries(containers)) {
+    container.replaceChildren()
+    batch.sections[section].forEach((topic, index) => container.append(createDiscoveryCard(topic, section, index)))
+  }
+}
+
 function renderFacts(item) {
   const facts = item.data.facts
   elements['facts-list'].replaceChildren()
@@ -896,7 +1320,7 @@ function renderResult(item) {
 
 async function retryStructuredContent() {
   if (!state.latest) return
-  if (state.activeCallIds.length > 0) await cancelActiveSearch()
+  if (state.activeGeneration) await cancelActiveSearch()
 
   const generation = `explore-${Date.now().toString(36)}-cards`
   const callId = `${generation}-cards`
@@ -967,6 +1391,7 @@ async function deleteHistoryItem(item, index) {
 }
 
 function showCachedResult(item, fromSearch = false) {
+  if (state.currentView !== 'results') state.resultReturnView = state.currentView
   state.activeQuery = item.query
   renderResult(item)
   elements['cache-notice'].hidden = !fromSearch
@@ -1029,9 +1454,14 @@ function submitFollowUp() {
 
 async function cancelActiveSearch() {
   const callIds = state.activeCallIds
+  const cancelledDiscovery = state.activeGeneration?.startsWith('discovery-')
   state.activeGeneration = null
   state.activeCallIds = []
   await Promise.allSettled(callIds.map((callId) => cherry.ai.cancel(callId)))
+  if (cancelledDiscovery) {
+    state.discoveryLastAttempt = 0
+    await saveWithFeedback(saveDiscoveryState)
+  }
 }
 
 function showToast(message, actionLabel, onAction) {
@@ -1062,6 +1492,11 @@ function bindEvents() {
   }
   elements['brand-button'].addEventListener('click', () => {
     void cancelActiveSearch()
+    if (state.resultReturnView === 'discovery') showDiscovery({ allowRefresh: false, restoreScroll: true })
+    else showHome()
+  })
+  elements['discovery-brand-button'].addEventListener('click', () => {
+    state.discoveryScrollY = window.scrollY
     showHome()
   })
   elements['favorite-toggle'].addEventListener('click', toggleFavorite)
@@ -1093,8 +1528,14 @@ function bindEvents() {
   })
 
   cherry.on('app.localeChange', ({ locale }) => {
+    const restartDiscovery = state.currentView === 'discovery' && state.activeGeneration?.startsWith('discovery-')
     state.locale = locale
+    if (state.currentView === 'discovery') {
+      state.discoveryBatch = latestDiscoveryBatch() || createFallbackDiscoveryBatch()
+    }
     applyTranslations()
+    if (restartDiscovery) void cancelActiveSearch().then(refreshDiscoveryIfNeeded)
+    else if (state.currentView === 'discovery') void refreshDiscoveryIfNeeded()
   })
 }
 
