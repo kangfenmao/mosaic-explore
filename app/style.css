@@ -1,6 +1,13 @@
 :root {
   color-scheme: light dark;
   --results-inline-start: 126px;
+  --primary: #3ed659;
+  --primary-foreground: #fff;
+  --primary-hover: #32c94f;
+  --mosaic-green-strong: #177a2b;
+  --border-selected: var(--primary);
+  --ring: var(--primary);
+  --link: var(--mosaic-green-strong);
 }
 
 * {
@@ -76,27 +83,16 @@ main {
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 66px;
   height: 66px;
   flex: 0 0 auto;
-  place-items: center;
-  border-radius: 20px;
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 
-.brand-mark svg {
-  width: 43px;
-  height: 43px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 3.3;
-}
-
-.brand-mark .spark {
-  stroke-width: 2.6;
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .brand-mark-small {
@@ -105,9 +101,19 @@ main {
   border-radius: 10px;
 }
 
-.brand-mark-small svg {
-  width: 23px;
-  height: 23px;
+.ui-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.ui-icon-filled {
+  fill: currentColor;
 }
 
 .search-box {
@@ -323,8 +329,10 @@ main {
 }
 
 .history-action {
+  display: grid;
   width: 34px;
   cursor: pointer;
+  place-items: center;
   border: 0;
   border-radius: 10px;
   background: transparent;
@@ -347,7 +355,11 @@ main {
   flex: 0 0 auto;
   place-items: center;
   color: var(--muted-foreground);
-  font-size: 15px;
+}
+
+.saved-icon .ui-icon {
+  width: 17px;
+  height: 17px;
 }
 
 .history-query {
@@ -482,6 +494,9 @@ main {
 }
 
 .favorite-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   cursor: pointer;
   padding: 5px 9px;
   border: 1px solid var(--border-subtle, var(--border));
@@ -496,6 +511,11 @@ main {
   border-color: var(--border-strong, var(--border));
   background: var(--background-subtle, var(--muted));
   color: var(--foreground);
+}
+
+.favorite-button .ui-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .answer-text {
@@ -580,7 +600,7 @@ main {
 }
 
 .explore-card {
-  --card-accent: hsl(calc(205 + var(--card-index) * 31) 70% 60%);
+  --card-accent: var(--mosaic-green-strong);
   display: flex;
   min-height: 176px;
   cursor: pointer;
@@ -618,8 +638,14 @@ main {
 }
 
 .explore-arrow {
+  display: grid;
   color: var(--muted-foreground);
-  font-size: 17px;
+  place-items: center;
+}
+
+.explore-arrow .ui-icon {
+  width: 17px;
+  height: 17px;
 }
 
 .explore-title {
@@ -648,7 +674,7 @@ main {
 }
 
 .fact-number {
-  color: var(--primary);
+  color: var(--mosaic-green-strong);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -835,11 +861,6 @@ main {
     width: 54px;
     height: 54px;
     border-radius: 17px;
-  }
-
-  .brand-mark svg {
-    width: 35px;
-    height: 35px;
   }
 
   .brand-lockup p {

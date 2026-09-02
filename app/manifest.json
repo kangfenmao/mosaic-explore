@@ -6,7 +6,7 @@
   "entry": "index.html",
   "icon": {
     "path": "icon.png",
-    "sha256": "aca209d6be55a5114705517c9e2eef9abeb942670fe0bb187cb50fdcd780c830"
+    "sha256": "83531ac0307cb4874ec23f3227428bc441680f5b4b2e1673a5dc0d77ef77ddcf"
   },
   "id": "com.kangfenmao.mosaic-search",
   "name": {
@@ -16,11 +16,11 @@
   "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
   "optionalPermissions": ["file.export"],
   "releaseNotes": {
-    "en": "Adds history-aware recommendations, cached-result choices, item-level history actions, contextual follow-ups, and optional text export.",
-    "zh": "新增历史避重推荐、缓存结果选择、单条历史管理、上下文追问和可选的文本导出。"
+    "en": "Introduces a unified green theme, a bolder brand icon, and consistent interface action icons.",
+    "zh": "启用统一的绿色主题、加粗品牌图标，并统一界面操作图标的图形规范。"
   },
   "update": {
     "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
   },
-  "version": "1.2.0"
+  "version": "1.2.1"
 }

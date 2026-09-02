@@ -199,6 +199,13 @@ const state = {
 }
 
 const elements = {}
+const iconMarkup = {
+  arrowUpRight: '<path d="M8 16 16 8M9 8h7v7"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5v4.8l3.2 1.8"/>',
+  export: '<path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
+  star: '<path d="m12 3.75 2.55 5.15 5.7.83-4.12 4.02.97 5.68L12 16.75 6.9 19.43l.97-5.68-4.12-4.02 5.7-.83L12 3.75Z"/>',
+  x: '<path d="m8 8 8 8M16 8l-8 8"/>'
+}
 
 function languageKey(locale = state.locale) {
   return locale.toLowerCase().startsWith('zh') ? 'zh' : 'en'
@@ -274,6 +281,7 @@ function applyTranslations() {
   elements['results-input'].placeholder = t('placeholder')
   elements.suggestions.setAttribute('aria-label', t('suggestionsAria'))
   elements['follow-up-input'].placeholder = t('followUpPlaceholder')
+  renderExportButton()
   renderSuggestions()
   renderSavedLists()
   if (state.latest) renderResult(state.latest)
@@ -286,6 +294,26 @@ function createButton(className, text, onClick) {
   button.textContent = text
   button.addEventListener('click', onClick)
   return button
+}
+
+function createIcon(name, filled = false) {
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  icon.setAttribute('viewBox', '0 0 24 24')
+  icon.setAttribute('aria-hidden', 'true')
+  icon.classList.add('ui-icon')
+  if (filled) icon.classList.add('ui-icon-filled')
+  icon.innerHTML = iconMarkup[name]
+  return icon
+}
+
+function renderLabeledIconButton(button, iconName, label, filled = false) {
+  const text = document.createElement('span')
+  text.textContent = label
+  button.replaceChildren(createIcon(iconName, filled), text)
+}
+
+function renderExportButton() {
+  renderLabeledIconButton(elements['export-result'], 'export', t(state.exporting ? 'exporting' : 'exportResult'))
 }
 
 function queryKey(query) {
@@ -331,11 +359,11 @@ function formatHistoryTime(timestamp) {
   }
 }
 
-function createHistoryAction(label, symbol, onClick, pressed) {
+function createHistoryAction(label, iconName, onClick, pressed, filled = false) {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'history-action'
-  button.textContent = symbol
+  button.append(createIcon(iconName, filled))
   button.setAttribute('aria-label', label)
   button.setAttribute('title', label)
   if (pressed !== undefined) button.setAttribute('aria-pressed', String(pressed))
@@ -353,7 +381,7 @@ function renderSavedItem(item, favorite = false, index = 0) {
 
   const icon = document.createElement('span')
   icon.className = 'saved-icon'
-  icon.textContent = favorite ? '★' : '◷'
+  icon.append(createIcon(favorite ? 'star' : 'clock', favorite))
   icon.setAttribute('aria-hidden', 'true')
 
   const query = document.createElement('span')
@@ -370,17 +398,18 @@ function renderSavedItem(item, favorite = false, index = 0) {
   const actions = document.createElement('div')
   actions.className = 'history-actions'
   if (favorite) {
-    actions.append(createHistoryAction(t('removeFavorite'), '★', () => setFavorite(item, false), true))
+    actions.append(createHistoryAction(t('removeFavorite'), 'star', () => setFavorite(item, false), true, true))
   } else {
     const saved = isFavorite(item.query)
     actions.append(
       createHistoryAction(
         saved ? t('removeFavorite') : t('addFavorite'),
-        saved ? '★' : '☆',
+        'star',
         () => setFavorite(item, !saved),
+        saved,
         saved
       ),
-      createHistoryAction(t('removeHistory'), '×', () => deleteHistoryItem(item, index))
+      createHistoryAction(t('removeHistory'), 'x', () => deleteHistoryItem(item, index))
     )
   }
   row.append(button, actions)
@@ -775,15 +804,14 @@ function isFavorite(query) {
 function renderFavoriteButton() {
   const favorite = isFavorite(state.latest.query)
   elements['favorite-toggle'].hidden = false
-  elements['favorite-toggle'].textContent = favorite ? `★ ${t('favorited')}` : `☆ ${t('favorite')}`
+  renderLabeledIconButton(elements['favorite-toggle'], 'star', t(favorite ? 'favorited' : 'favorite'), favorite)
   elements['favorite-toggle'].setAttribute('aria-pressed', String(favorite))
 }
 
-function createExploreCard(card, index) {
+function createExploreCard(card) {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'explore-card'
-  button.style.setProperty('--card-index', String(index))
   button.setAttribute('aria-label', t('exploreAction', card.title))
 
   const top = document.createElement('span')
@@ -793,8 +821,7 @@ function createExploreCard(card, index) {
   category.textContent = card.category
   const arrow = document.createElement('span')
   arrow.className = 'explore-arrow'
-  arrow.textContent = '↗'
-  arrow.setAttribute('aria-hidden', 'true')
+  arrow.append(createIcon('arrowUpRight'))
   top.append(category, arrow)
 
   const title = document.createElement('strong')
@@ -853,7 +880,7 @@ function renderResult(item) {
 
   elements['explore-cards'].replaceChildren()
   elements['result-count'].textContent = item.data.cards.length ? t('resultCount', item.data.cards.length) : ''
-  item.data.cards.forEach((card, index) => elements['explore-cards'].append(createExploreCard(card, index)))
+  item.data.cards.forEach((card) => elements['explore-cards'].append(createExploreCard(card)))
 
   renderFacts(item)
 
@@ -968,7 +995,7 @@ async function exportResult() {
   if (!state.latest || state.exporting) return
   state.exporting = true
   elements['export-result'].disabled = true
-  elements['export-result'].textContent = t('exporting')
+  renderExportButton()
   try {
     const permissions = await cherry.app.getPermissions()
     if (!permissions['file.export']) {
@@ -983,7 +1010,7 @@ async function exportResult() {
   } finally {
     state.exporting = false
     elements['export-result'].disabled = false
-    elements['export-result'].textContent = t('exportResult')
+    renderExportButton()
   }
 }
 
