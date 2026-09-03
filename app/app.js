@@ -1,14 +1,14 @@
 const HISTORY_KEY = 'explore-history-v1'
 const HISTORY_FILE = 'explore-history.json'
 const FAVORITES_KEY = 'explore-favorites-v1'
-const DISCOVERY_KEY = 'explore-discovery-v1'
+const DISCOVERY_KEY = 'explore-discovery-v2'
 const EXPORT_FILE = 'mosaic-explore-share.txt'
 const MAX_HISTORY = 100
 const MAX_FAVORITES = 12
 const MAX_CARDS = 6
 const MAX_DISCOVERY_BATCHES = 3
 const MAX_SEEN_DISCOVERY_TOPICS = 120
-const DISCOVERY_REFRESH_INTERVAL = 60 * 60 * 1000
+const DISCOVERY_REFRESH_INTERVAL = 30 * 60 * 1000
 const DISCOVERY_COUNTS = { featured: 4, fresh: 6, whatIf: 5, connections: 5 }
 
 const translations = {
@@ -28,7 +28,9 @@ const translations = {
     discoveryMore: '探索更多',
     discoveryTitle: '今天想探索什么？',
     discoveryDescription: '从熟悉的世界拐个弯，看看知识还能通向哪里。',
-    discoveryFrequency: '每小时更新',
+    discoveryFrequency: '每半小时更新',
+    discoveryBrowse: '浏览分类',
+    discoveryRefreshHint: '先显示已有内容，后台更新完成后会在下次进入时展示。',
     discoveryFeatured: '本期焦点',
     discoveryFresh: '新鲜发现',
     discoveryWhatIf: '脑洞实验室',
@@ -96,14 +98,108 @@ const translations = {
       'what-if': '脑洞',
       mind: '心理'
     },
-    fallbackSummaries: {
-      science: '从常见现象背后，找到一条通往科学原理的入口。',
-      history: '回到具体的时代现场，看看历史如何影响今天。',
-      culture: '拆开熟悉的文化体验，发现它为什么让人着迷。',
-      cosmos: '把视线移向宇宙，用极端尺度重新理解日常世界。',
-      'what-if': '改变一个关键条件，推演世界可能发生的连锁反应。',
-      mind: '观察大脑如何塑造感觉、记忆和我们做出的判断。'
-    },
+    discoveryFallbackTopics: [
+      {
+        category: 'science',
+        title: '为什么周末补觉越睡越累，“睡眠债”真的能一次还清吗？',
+        summary: '睡眠时长、作息节律和刚醒时的迟钝感，其实是三个不同的问题。'
+      },
+      {
+        category: 'history',
+        title: '古代没有冰箱，皇宫夏天用的冰从哪里来，普通人吃得到吗？',
+        summary: '从冬季藏冰到民间冰食，一块冰背后是一整套古代供应链。'
+      },
+      {
+        category: 'culture',
+        title: '为什么一些上映时被骂的电影，多年后反而会被重新评价？',
+        summary: '作品没有改变，改变的可能是观众、时代语境和评价它的标准。'
+      },
+      {
+        category: 'cosmos',
+        title: '宇宙中几乎听不到声音，科幻电影里的爆炸声应该怎样理解？',
+        summary: '真实物理与观影体验之间的取舍，比简单判断“对不对”更有意思。'
+      },
+      {
+        category: 'what-if',
+        title: '如果人类从此不需要睡觉，最先被改写的是工作制度还是家庭关系？',
+        summary: '每天突然多出八小时，未必只意味着生产力提高。'
+      },
+      {
+        category: 'science',
+        title: '恐龙的叫声从未被录下，科学家凭什么推测它们如何发声？',
+        summary: '化石、头骨结构和现存近亲，能把消失的声音拼回到什么程度？'
+      },
+      {
+        category: 'culture',
+        title: '同一段笑话翻译后不好笑了，幽默究竟丢在了哪里？',
+        summary: '双关、节奏和共同经验，都会让笑点在跨语言时发生损耗。'
+      },
+      {
+        category: 'mind',
+        title: '魔术师明明没有遮住动作，为什么观众仍会“看不见”？',
+        summary: '注意力并不是摄像机，大脑只会保留它认为重要的那部分现场。'
+      },
+      {
+        category: 'science',
+        title: '深海动物长得像“怪物”，是人类审美偏见还是环境真的更残酷？',
+        summary: '黑暗、高压和稀缺食物，塑造了与陆地完全不同的生存答案。'
+      },
+      {
+        category: 'culture',
+        title: '游戏经常违反物理规律，为什么玩家反而觉得操作更“真实”？',
+        summary: '可控、及时和符合预期，有时比严格模拟现实更能制造真实感。'
+      },
+      {
+        category: 'history',
+        title: '咖啡馆为什么曾成为思想、革命和商业信息的集散地？',
+        summary: '一种饮料与一种公共空间结合后，意外改变了人们交换信息的方式。'
+      },
+      {
+        category: 'mind',
+        title: '如果梦能被完整录下来，人会更了解自己还是更容易误解自己？',
+        summary: '梦境并不是内心的透明录像，记录下来也不等于能够正确解读。'
+      },
+      {
+        category: 'cosmos',
+        title: '火星看起来最像地球，为什么它可能仍不是最适合移居的星球？',
+        summary: '熟悉的地貌容易让人忽略辐射、资源和长期生存成本。'
+      },
+      {
+        category: 'mind',
+        title: '一首歌只听几遍就会“洗脑”，大脑究竟记住了什么？',
+        summary: '重复只是表面，旋律对预期的满足与打破才是记忆的抓手。'
+      },
+      {
+        category: 'history',
+        title: '没有天气预报的古人，哪些观天经验有效，哪些只是巧合？',
+        summary: '长期经验里既有可验证的规律，也混杂着事后解释和选择性记忆。'
+      },
+      {
+        category: 'cosmos',
+        title: '时间旅行最难解决的不是技术，而是因果关系吗？',
+        summary: '机器能否造出来是一回事，过去被改变后逻辑能否自洽是另一回事。'
+      },
+      {
+        category: 'science',
+        title: '城市看似远离自然，为什么反而成了某些野生动物的理想栖息地？',
+        summary: '稳定食物、人造庇护所和较少天敌，让城市形成了新的生态位。'
+      },
+      {
+        category: 'culture',
+        title: '电影里的科学错误人人都知道，为什么创作者还在反复使用？',
+        summary: '视觉冲击、叙事速度和观众习惯，常常比准确性更影响创作选择。'
+      },
+      {
+        category: 'mind',
+        title: '如果一个人永远不会遗忘，他会更聪明还是更痛苦？',
+        summary: '遗忘不只是记忆失效，它也帮助大脑抽象规律并放下无关细节。'
+      },
+      {
+        category: 'what-if',
+        title: '如果动物拥有和人类相同的语言能力，法律首先要改哪一条？',
+        summary: '能够表达意愿之后，权利、责任与所有权的边界都要重新划定。'
+      }
+    ],
     suggestions: [
       { category: 'science', query: '为什么天空是蓝色的？' },
       { category: 'history', query: '穿越到唐朝的一天' },
@@ -144,7 +240,9 @@ const translations = {
     discoveryMore: 'Discover more',
     discoveryTitle: 'What will you discover today?',
     discoveryDescription: 'Take a turn away from the familiar and see where knowledge leads.',
-    discoveryFrequency: 'Updated hourly',
+    discoveryFrequency: 'Updated every 30 minutes',
+    discoveryBrowse: 'Browse sections',
+    discoveryRefreshHint: 'Existing topics appear first. New content is shown on your next visit after it refreshes.',
     discoveryFeatured: 'In focus',
     discoveryFresh: 'Fresh discoveries',
     discoveryWhatIf: 'What-if lab',
@@ -212,14 +310,108 @@ const translations = {
       'what-if': 'What if',
       mind: 'Mind'
     },
-    fallbackSummaries: {
-      science: 'Start with a familiar phenomenon and uncover the science behind it.',
-      history: 'Step into a particular era and see how it still shapes life today.',
-      culture: 'Open up a familiar cultural experience and discover why it fascinates us.',
-      cosmos: 'Look outward and use cosmic scales to rethink the everyday world.',
-      'what-if': 'Change one condition and follow the chain reaction through an imagined world.',
-      mind: 'See how the brain shapes perception, memory, and the choices we make.'
-    },
+    discoveryFallbackTopics: [
+      {
+        category: 'science',
+        title: 'Why can sleeping late on weekends leave you more tired, and can sleep debt really be repaid at once?',
+        summary: 'Sleep duration, body-clock timing, and grogginess after waking are three different problems.'
+      },
+      {
+        category: 'history',
+        title: 'Without refrigerators, where did imperial courts get summer ice, and could ordinary people afford it?',
+        summary: 'From winter ice houses to street desserts, a block of ice depended on an entire ancient supply chain.'
+      },
+      {
+        category: 'culture',
+        title: 'Why are some films dismissed on release but reconsidered as classics years later?',
+        summary: 'The work stays the same while its audience, historical context, and standards of judgment change.'
+      },
+      {
+        category: 'cosmos',
+        title: 'If space is almost silent, how should we think about explosions in science-fiction films?',
+        summary: 'The trade-off between physical accuracy and cinematic experience is more interesting than a simple verdict.'
+      },
+      {
+        category: 'what-if',
+        title: 'If humans no longer needed sleep, would work or family life change first?',
+        summary: 'Adding eight hours to every day would reshape much more than productivity.'
+      },
+      {
+        category: 'science',
+        title: 'No one recorded a dinosaur. How can scientists infer what one sounded like?',
+        summary: 'Fossils, skull anatomy, and living relatives reveal how much of a vanished sound can be reconstructed.'
+      },
+      {
+        category: 'culture',
+        title: 'When a joke stops being funny after translation, where did the humor go?',
+        summary: 'Wordplay, timing, and shared experience can all disappear when a joke crosses languages.'
+      },
+      {
+        category: 'mind',
+        title: 'A magician does not hide the move, so why do spectators still fail to see it?',
+        summary: 'Attention is not a camera; the brain keeps only the parts it decides are important.'
+      },
+      {
+        category: 'science',
+        title: 'Do deep-sea animals look monstrous because of human bias, or because their environment is truly harsher?',
+        summary: 'Darkness, pressure, and scarce food produce survival strategies unlike anything on land.'
+      },
+      {
+        category: 'culture',
+        title: 'Video games often break physics, so why can their controls feel more realistic?',
+        summary: 'Control, responsiveness, and predictable feedback can feel more real than strict simulation.'
+      },
+      {
+        category: 'history',
+        title: 'Why did coffeehouses become hubs for ideas, revolutions, and commercial information?',
+        summary: 'A drink combined with a public meeting place changed how people exchanged information.'
+      },
+      {
+        category: 'mind',
+        title: 'If dreams could be recorded perfectly, would we understand ourselves better or misread ourselves more?',
+        summary: 'A dream is not a transparent recording of the mind, even when every detail can be replayed.'
+      },
+      {
+        category: 'cosmos',
+        title: 'Mars looks most like Earth, so why might it still be a poor place for human settlement?',
+        summary: 'Familiar landscapes can distract from radiation, scarce resources, and long-term survival costs.'
+      },
+      {
+        category: 'mind',
+        title: 'When a song gets stuck after only a few plays, what exactly has the brain remembered?',
+        summary: 'Repetition helps, but the real hook is how a melody satisfies and disrupts expectation.'
+      },
+      {
+        category: 'history',
+        title: 'Before forecasts, which signs of weather were useful and which were coincidence?',
+        summary: 'Accumulated experience mixed testable patterns with hindsight and selective memory.'
+      },
+      {
+        category: 'cosmos',
+        title: 'Is causality a harder problem for time travel than the technology itself?',
+        summary: 'Building a machine is one challenge; keeping logic consistent after changing the past is another.'
+      },
+      {
+        category: 'science',
+        title: 'Cities seem far from nature, so why are they ideal habitats for some wild animals?',
+        summary: 'Reliable food, artificial shelter, and fewer predators create entirely new urban niches.'
+      },
+      {
+        category: 'culture',
+        title: 'If everyone knows the science in films is wrong, why do creators keep repeating the same errors?',
+        summary: 'Visual impact, narrative speed, and audience expectations often outweigh accuracy.'
+      },
+      {
+        category: 'mind',
+        title: 'If a person could never forget anything, would they become smarter or suffer more?',
+        summary: 'Forgetting is not merely failure; it helps the brain abstract patterns and release irrelevant detail.'
+      },
+      {
+        category: 'what-if',
+        title: 'If animals could speak like humans, which law would need to change first?',
+        summary: 'Once animals can state their wishes, rights, responsibility, and ownership all need new boundaries.'
+      }
+    ],
     suggestions: [
       { category: 'science', query: 'Why is the sky blue?' },
       { category: 'history', query: 'A day in ancient Rome' },
@@ -273,9 +465,6 @@ const iconMarkup = {
   clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5v4.8l3.2 1.8"/>',
   compass: '<circle cx="12" cy="12" r="8"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z"/>',
   export: '<path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/>',
-  link: '<path d="m9.5 14.5 5-5M7.8 16.2l-1 1a3 3 0 0 1-4.2-4.2l3-3a3 3 0 0 1 4.2 0M16.2 7.8l1-1a3 3 0 0 1 4.2 4.2l-3 3a3 3 0 0 1-4.2 0"/>',
-  orbit: '<circle cx="12" cy="12" r="2.2"/><path d="M4.4 9.2c1.4-3.9 4.4-6.2 6.8-5.3s3.2 4.7 1.8 8.6-4.4 6.2-6.8 5.3-3.2-4.7-1.8-8.6Z"/><path d="M9.2 19.6c-3.9-1.4-6.2-4.4-5.3-6.8s4.7-3.2 8.6-1.8 6.2 4.4 5.3 6.8-4.7 3.2-8.6 1.8Z"/>',
-  spark: '<path d="m12 3 1.2 4.2L17 9l-3.8 1.8L12 15l-1.2-4.2L7 9l3.8-1.8L12 3ZM18.5 14.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3Z"/>',
   star: '<path d="m12 3.75 2.55 5.15 5.7.83-4.12 4.02.97 5.68L12 16.75 6.9 19.43l.97-5.68-4.12-4.02 5.7-.83L12 3.75Z"/>',
   x: '<path d="m8 8 8 8M16 8l-8 8"/>'
 }
@@ -361,7 +550,6 @@ function applyTranslations() {
   elements['results-input'].placeholder = t('placeholder')
   elements.suggestions.setAttribute('aria-label', t('suggestionsAria'))
   elements['follow-up-input'].placeholder = t('followUpPlaceholder')
-  renderDiscoverySectionIcons()
   renderExportButton()
   renderSuggestions()
   renderSavedLists()
@@ -396,12 +584,6 @@ function renderLabeledIconButton(button, iconName, label, filled = false) {
 
 function renderExportButton() {
   renderLabeledIconButton(elements['export-result'], 'export', t(state.exporting ? 'exporting' : 'exportResult'))
-}
-
-function renderDiscoverySectionIcons() {
-  document.querySelectorAll('[data-discovery-icon]').forEach((node) => {
-    node.replaceChildren(createIcon(node.dataset.discoveryIcon))
-  })
 }
 
 function queryKey(query) {
@@ -582,16 +764,15 @@ function latestDiscoveryBatch() {
 }
 
 function createFallbackDiscoveryBatch() {
-  const suggestions = t('suggestions')
+  const topics = t('discoveryFallbackTopics')
   const labels = t('categoryLabels')
-  const summaries = t('fallbackSummaries')
   const topic = (index) => {
-    const suggestion = suggestions[index]
+    const candidate = topics[index]
     return {
-      category: labels[suggestion.category] || suggestion.category,
-      title: suggestion.query,
-      summary: summaries[suggestion.category] || summaries.culture,
-      prompt: suggestion.query
+      category: labels[candidate.category] || candidate.category,
+      title: candidate.title,
+      summary: candidate.summary,
+      prompt: candidate.title
     }
   }
   const indexes = {
@@ -888,8 +1069,14 @@ function createDiscoveryPrompt(sectionCounts) {
     `Use this exact shape: {${shapes}}`,
     requirements,
     'featured should feel important and memorable. fresh should span science, history, culture, nature, technology, and everyday life.',
-    'whatIf should explore imaginative counterfactuals. connections should reveal a surprising relationship between different fields.',
-    'Every title must create curiosity without clickbait. summary must be one concise, useful sentence.',
+    'whatIf should use plausible counterfactuals with concrete consequences. connections should reveal a surprising relationship between different fields.',
+    'Write every title as a complete, self-contained question that a knowledgeable community would want to discuss.',
+    'Start from a concrete observation, apparent contradiction, real trade-off, disputed claim, or familiar experience, then ask about its mechanism, boundary, consequence, or meaning.',
+    'Favor questions that support multiple informed angles while still having a factual core. Make the tension clear inside the title instead of hiding it in the summary.',
+    'Avoid bare topics and empty templates such as “What is interesting about…”, “What happens in…”, “Why is X fascinating?”, or vague lists of facts.',
+    'Avoid sensational wording, invented premises, celebrity gossip, and more than three titles beginning with a hypothetical “What if”.',
+    'Do not mention, imitate, or copy questions from any website or community.',
+    'summary must be one specific sentence that explains why the question is worth answering; never use generic invitations to explore.',
     'Every prompt must be a self-contained question suitable for a detailed AI answer.',
     'Do not repeat or lightly rephrase topics within the response.',
     avoidedTopics ? `Avoid these recently shown or explored topics and close variations: ${avoidedTopics}` : ''
@@ -1227,21 +1414,20 @@ function createDiscoveryCard(topic, section, index) {
   if (isLead) button.classList.add('discovery-card-lead')
   button.setAttribute('aria-label', t('discoveryTopicAction', topic.title))
 
+  const category = document.createElement('span')
+  category.className = 'discovery-card-category'
+  category.textContent = topic.category
   const title = document.createElement('strong')
   title.className = 'discovery-card-title'
   title.textContent = topic.title
   const summary = document.createElement('span')
   summary.className = 'discovery-card-summary'
   summary.textContent = topic.summary
-  button.append(title, summary)
-
-  if (isLead) {
-    const action = document.createElement('span')
-    action.className = 'discovery-card-action'
-    action.setAttribute('aria-hidden', 'true')
-    action.append(document.createTextNode(t('discovery')), createIcon('arrowUpRight'))
-    button.append(action)
-  }
+  const action = document.createElement('span')
+  action.className = 'discovery-card-action'
+  action.setAttribute('aria-hidden', 'true')
+  action.append(createIcon('arrowRight'))
+  button.append(category, title, summary, action)
   button.addEventListener('click', () => openDiscoveryTopic(topic))
   return button
 }
@@ -1498,6 +1684,14 @@ function bindEvents() {
   elements['discovery-brand-button'].addEventListener('click', () => {
     state.discoveryScrollY = window.scrollY
     showHome()
+  })
+  document.querySelectorAll('[data-discovery-target]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = document.getElementById(button.dataset.discoveryTarget)
+      const reducedMotion =
+        typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      target?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' })
+    })
   })
   elements['favorite-toggle'].addEventListener('click', toggleFavorite)
   elements['export-result'].addEventListener('click', exportResult)

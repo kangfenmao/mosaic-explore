@@ -16,11 +16,11 @@
   "permissions": ["ai.chat", "file.load", "file.save", "storage.get", "storage.set"],
   "optionalPermissions": ["file.export"],
   "releaseNotes": {
-    "en": "### What's new\n\n- Added a 20-topic Discover page organized into four focused sections.\n- Shows cached topics immediately, then refreshes them silently after one hour with two concurrent AI requests.\n- Refined home recommendations and discovery cards for a clearer, less rigid visual hierarchy.\n- Separated package and in-app icons so both render correctly in Cherry Studio.",
-    "zh": "### 本次更新\n\n- 新增包含 20 个话题的探索页，按四个主题区域组织内容。\n- 优先展示缓存内容，超过一小时后通过两路 AI 并发静默更新，下次进入即可看到新内容。\n- 优化首页推荐与探索卡片层级，让页面更清晰、排列更自然。\n- 分离安装包图标与应用内图标，改善 Cherry Studio 中的显示一致性。"
+    "en": "Redesigns Discover as a focused question feed, sharpens topics around concrete tensions and surprising explanations, and refreshes content every 30 minutes.",
+    "zh": "将探索页重做为问题信息流，让话题围绕具体矛盾和意外解释展开，并改为每半小时更新。"
   },
   "update": {
     "url": "https://kangfenmao.github.io/mosaic-explore/manifest.json"
   },
-  "version": "1.3.0"
+  "version": "1.3.1"
 }

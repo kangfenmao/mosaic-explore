@@ -40,7 +40,7 @@
           <span data-i18n="shortName">万象</span>
         </button>
         <strong data-i18n="discovery">探索</strong>
-        <span class="discovery-frequency" data-i18n="discoveryFrequency">每小时更新</span>
+        <span class="discovery-frequency" data-i18n="discoveryFrequency">每半小时更新</span>
       </header>
 
       <main>
@@ -95,43 +95,76 @@
             <p data-i18n="discoveryDescription">从熟悉的世界拐个弯，看看知识还能通向哪里。</p>
           </div>
 
-          <section class="discovery-section">
-            <div class="discovery-section-heading">
-              <span class="discovery-section-icon" data-discovery-icon="spark" aria-hidden="true"></span>
-              <h2 data-i18n="discoveryFeatured">本期焦点</h2>
+          <div class="discovery-layout">
+            <div class="discovery-feed">
+              <section id="discovery-section-featured" class="discovery-section discovery-section-featured">
+                <div class="discovery-section-heading">
+                  <span class="discovery-section-dot" aria-hidden="true"></span>
+                  <h2 data-i18n="discoveryFeatured">本期焦点</h2>
+                </div>
+                <div id="discovery-featured" class="discovery-grid"></div>
+              </section>
+
+              <section id="discovery-section-fresh" class="discovery-section discovery-section-fresh">
+                <div class="discovery-section-heading">
+                  <span class="discovery-section-dot" aria-hidden="true"></span>
+                  <h2 data-i18n="discoveryFresh">新鲜发现</h2>
+                </div>
+                <div id="discovery-fresh" class="discovery-grid"></div>
+              </section>
+
+              <section id="discovery-section-what-if" class="discovery-section discovery-section-what-if">
+                <div class="discovery-section-heading">
+                  <span class="discovery-section-dot" aria-hidden="true"></span>
+                  <h2 data-i18n="discoveryWhatIf">脑洞实验室</h2>
+                </div>
+                <div id="discovery-what-if" class="discovery-grid"></div>
+              </section>
+
+              <section id="discovery-section-connections" class="discovery-section discovery-section-connections">
+                <div class="discovery-section-heading">
+                  <span class="discovery-section-dot" aria-hidden="true"></span>
+                  <h2 data-i18n="discoveryConnections">意外连接</h2>
+                </div>
+                <div id="discovery-connections" class="discovery-grid"></div>
+              </section>
             </div>
-            <div id="discovery-featured" class="discovery-grid discovery-grid-featured"></div>
-          </section>
 
-          <section class="discovery-section">
-            <div class="discovery-section-heading">
-              <span class="discovery-section-icon" data-discovery-icon="compass" aria-hidden="true"></span>
-              <h2 data-i18n="discoveryFresh">新鲜发现</h2>
-            </div>
-            <div id="discovery-fresh" class="discovery-grid discovery-grid-standard"></div>
-          </section>
+            <aside class="discovery-sidebar">
+              <section class="discovery-sidebar-card">
+                <h2 data-i18n="discoveryBrowse">浏览分类</h2>
+                <button class="discovery-nav-item discovery-nav-featured" type="button" data-discovery-target="discovery-section-featured">
+                  <span class="discovery-nav-dot" aria-hidden="true"></span>
+                  <span data-i18n="discoveryFeatured">本期焦点</span>
+                  <span class="discovery-nav-arrow" aria-hidden="true">→</span>
+                </button>
+                <button class="discovery-nav-item discovery-nav-fresh" type="button" data-discovery-target="discovery-section-fresh">
+                  <span class="discovery-nav-dot" aria-hidden="true"></span>
+                  <span data-i18n="discoveryFresh">新鲜发现</span>
+                  <span class="discovery-nav-arrow" aria-hidden="true">→</span>
+                </button>
+                <button class="discovery-nav-item discovery-nav-what-if" type="button" data-discovery-target="discovery-section-what-if">
+                  <span class="discovery-nav-dot" aria-hidden="true"></span>
+                  <span data-i18n="discoveryWhatIf">脑洞实验室</span>
+                  <span class="discovery-nav-arrow" aria-hidden="true">→</span>
+                </button>
+                <button class="discovery-nav-item discovery-nav-connections" type="button" data-discovery-target="discovery-section-connections">
+                  <span class="discovery-nav-dot" aria-hidden="true"></span>
+                  <span data-i18n="discoveryConnections">意外连接</span>
+                  <span class="discovery-nav-arrow" aria-hidden="true">→</span>
+                </button>
+              </section>
 
-          <div class="discovery-columns">
-            <section class="discovery-section">
-              <div class="discovery-section-heading">
-                <span class="discovery-section-icon" data-discovery-icon="orbit" aria-hidden="true"></span>
-                <h2 data-i18n="discoveryWhatIf">脑洞实验室</h2>
-              </div>
-              <div id="discovery-what-if" class="discovery-grid discovery-grid-compact"></div>
-            </section>
+              <section class="discovery-sidebar-note">
+                <strong data-i18n="discoveryFrequency">每半小时更新</strong>
+                <p data-i18n="discoveryRefreshHint">先显示已有内容，后台更新完成后会在下次进入时展示。</p>
+              </section>
 
-            <section class="discovery-section">
-              <div class="discovery-section-heading">
-                <span class="discovery-section-icon" data-discovery-icon="link" aria-hidden="true"></span>
-                <h2 data-i18n="discoveryConnections">意外连接</h2>
-              </div>
-              <div id="discovery-connections" class="discovery-grid discovery-grid-compact"></div>
-            </section>
+              <p class="discovery-disclaimer" data-i18n="discoveryDisclaimer">
+                内容由 AI 基于已有知识生成，不代表实时信息。
+              </p>
+            </aside>
           </div>
-
-          <p class="discovery-disclaimer" data-i18n="discoveryDisclaimer">
-            内容由 AI 基于已有知识生成，不代表实时信息。
-          </p>
         </section>
 
         <section id="results-view" class="results-view" hidden>

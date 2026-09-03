@@ -14,7 +14,7 @@ Mosaic Explore is a Cherry Studio MiniApp for turning one question into an inter
 
 - Streams a direct AI answer while generating exploration content concurrently.
 - Creates six paths, three surprising facts, and playful next topics.
-- Opens a 20-topic discovery page from the home suggestions, with hourly background refreshes that appear on the next visit.
+- Opens a 20-topic discovery page from the home suggestions, with background refreshes every 30 minutes that appear on the next visit.
 - Rotates category-balanced recommendations and avoids topics already in history when possible.
 - Reopens identical searches from the local cache, with an explicit regenerate option.
 - Stores up to 100 complete explorations and 12 favorites, with item-level favorite and delete actions.
